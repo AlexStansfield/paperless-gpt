@@ -247,6 +247,7 @@ services:
       # DOCLING_IMAGE_EXPORT_MODE: "placeholder" # Optional, defaults to "embedded"
       # DOCLING_OCR_PIPELINE: "standard" # Optional, defaults to "vlm"
       # DOCLING_OCR_ENGINE: "easyocr" # Optional, defaults to "easyocr" (only used when `DOCLING_OCR_PIPELINE is set to 'standard')
+      # DOCLING_OCR_LANG: "th,en" # Optional, comma-separated ISO 639-1 codes sent as ocr_lang (only used when `DOCLING_OCR_PIPELINE is set to 'standard')
 
 
       AUTO_OCR_TAG: "paperless-gpt-ocr-auto" # Optional, default: paperless-gpt-ocr-auto
@@ -402,6 +403,7 @@ paperless-gpt supports four different OCR providers, each with unique strengths 
   DOCLING_IMAGE_EXPORT_MODE: "placeholder" # Optional, defaults to "embedded"
   DOCLING_OCR_PIPELINE: "standard" # Optional, defaults to "vlm"
   DOCLING_OCR_ENGINE: "macocr" # Optional, defaults to "easyocr" (only used when `DOCLING_OCR_PIPELINE is set to 'standard')
+  DOCLING_OCR_LANG: "th,en" # Optional, comma-separated ISO 639-1 codes sent as ocr_lang (only used when `DOCLING_OCR_PIPELINE is set to 'standard')
   ```
 
 ## OCR Processing Modes
@@ -619,6 +621,7 @@ For best results with the enhanced OCR features:
 | `DOCLING_IMAGE_EXPORT_MODE`         | Mode for image export. Optional; defaults to `embedded` if unset.                                                                                                                             | No       | embedded                   |
 | `DOCLING_OCR_PIPELINE`              | Sets the pipeline type. Optional; defaults to `vlm` if unset.                                                                                                                                 | No       | vlm                        |
 | `DOCLING_OCR_ENGINE`                | Sets the ocr engine, if `DOCLING_OCR_PIPELINE` is set to `standard`. Optional; defaults to `easyocr`                                                                                          | No       | easyocr                    |
+| `DOCLING_OCR_LANG`                  | Comma-separated ISO 639-1 language codes sent to Docling as `ocr_lang` (e.g. `th,en`), if `DOCLING_OCR_PIPELINE` is set to `standard`. Optional; when unset the Docling server's default languages apply. Which codes an engine accepts, and which language models are installed, is decided by the Docling server. | No       |                            |
 | `CREATE_LOCAL_HOCR`                 | Whether to save hOCR files locally.                                                                                                                                                           | No       | false                      |
 | `LOCAL_HOCR_PATH`                   | Path where hOCR files will be saved when hOCR generation is enabled.                                                                                                                          | No       | /app/hocr                  |
 | `CREATE_LOCAL_PDF`                  | Whether to save enhanced PDFs locally.                                                                                                                                                        | No       | false                      |

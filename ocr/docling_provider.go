@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
@@ -20,7 +21,23 @@ type DoclingProvider struct {
 	imageExportMode string
 	pipeline        string
 	ocrEngine       string
+	ocrLang         []string
 	httpClient      *retryablehttp.Client
+}
+
+// parseOCRLang splits a comma-separated language list into the individual
+// codes Docling expects. Docling's ocr_lang is a list: each code has to be its
+// own multipart field. A single "th,en" field is read as one unknown language,
+// the conversion fails, and the synchronous endpoint reports that as an
+// unhelpful HTTP 404 "Task result not found" rather than a validation error.
+func parseOCRLang(raw string) []string {
+	var langs []string
+	for _, l := range strings.Split(raw, ",") {
+		if l = strings.TrimSpace(l); l != "" {
+			langs = append(langs, l)
+		}
+	}
+	return langs
 }
 
 // newDoclingProvider creates a new Docling OCR provider
@@ -41,6 +58,7 @@ func newDoclingProvider(config Config) (*DoclingProvider, error) {
 		imageExportMode: config.DoclingImageExportMode,
 		pipeline:        config.DoclingOCRPipeline,
 		ocrEngine:       config.DoclingOCREngine,
+		ocrLang:         parseOCRLang(config.DoclingOCRLang),
 		httpClient:      client,
 	}
 
@@ -104,6 +122,13 @@ func (p *DoclingProvider) ProcessImage(ctx context.Context, imageContent []byte,
 		if err := writer.WriteField("ocr_engine", p.ocrEngine); err != nil {
 			return nil, fmt.Errorf("set ocr_engine: %w", err)
 		}
+		// One field per language: Docling's ocr_lang is a list. Left out
+		// entirely when unset so the server's own default applies.
+		for _, lang := range p.ocrLang {
+			if err := writer.WriteField("ocr_lang", lang); err != nil {
+				return nil, fmt.Errorf("set ocr_lang: %w", err)
+			}
+		}
 	}
 	if err := writer.WriteField("image_export_mode", p.imageExportMode); err != nil {
 		return nil, fmt.Errorf("set image_export_mode: %w", err)
@@ -132,6 +157,7 @@ func (p *DoclingProvider) ProcessImage(ctx context.Context, imageContent []byte,
 		"do_ocr":            "true",
 		"pipeline":          p.pipeline,
 		"ocr_engine":        p.ocrEngine,
+		"ocr_lang":          p.ocrLang,
 		"image_export_mode": p.imageExportMode,
 	}).Debug("Docling request parameters")
 

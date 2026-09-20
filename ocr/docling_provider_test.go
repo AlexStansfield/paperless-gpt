@@ -192,3 +192,58 @@ func TestDoclingProvider_ProcessImage(t *testing.T) {
 		})
 	}
 }
+
+func TestParseOCRLang(t *testing.T) {
+	assert.Nil(t, parseOCRLang(""))
+	assert.Equal(t, []string{"th", "en"}, parseOCRLang("th,en"))
+	assert.Equal(t, []string{"th", "en"}, parseOCRLang(" th , en , "))
+	assert.Equal(t, []string{"en"}, parseOCRLang("en"))
+}
+
+// Docling's ocr_lang is a list, so each language must be sent as its own
+// multipart field. A single "th,en" field is read as one unknown language and
+// the conversion fails.
+func TestDoclingProvider_OCRLangFormFields(t *testing.T) {
+	tests := []struct {
+		name         string
+		pipeline     string
+		ocrLang      []string
+		expectedLang []string // nil means the field must be absent
+	}{
+		{name: "standard pipeline, two languages", pipeline: "standard", ocrLang: []string{"th", "en"}, expectedLang: []string{"th", "en"}},
+		{name: "standard pipeline, unset", pipeline: "standard", ocrLang: nil, expectedLang: nil},
+		{name: "vlm pipeline ignores languages", pipeline: "vlm", ocrLang: []string{"th", "en"}, expectedLang: nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var gotLang []string
+			var gotEngine []string
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.NoError(t, r.ParseMultipartForm(10<<20))
+				gotLang = r.MultipartForm.Value["ocr_lang"]
+				gotEngine = r.MultipartForm.Value["ocr_engine"]
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(DoclingConvertResponse{
+					Status:   "success",
+					Document: DoclingDocumentResponse{TextContent: "ok", Filename: "document.pdf"},
+				})
+			})
+			server := setupDoclingTestServer(t, handler)
+
+			provider := newTestDoclingProvider(server.URL)
+			provider.pipeline = tt.pipeline
+			provider.ocrEngine = "auto"
+			provider.ocrLang = tt.ocrLang
+
+			_, err := provider.ProcessImage(context.Background(), []byte("dummy"), 1)
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectedLang, gotLang)
+			if tt.pipeline == "standard" {
+				assert.Equal(t, []string{"auto"}, gotEngine)
+			} else {
+				assert.Nil(t, gotEngine)
+			}
+		})
+	}
+}
