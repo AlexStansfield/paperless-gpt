@@ -79,6 +79,7 @@ type Config struct {
 	DoclingImageExportMode string
 	DoclingOCRPipeline     string // Optional, defaults to "vlm"
 	DoclingOCREngine       string // Optional, defaults to "easyocr", if DoclingOCRPipeline == "standard"
+	DoclingOCRLang         string // Optional, comma-separated ISO 639-1 codes (e.g. "th,en"), sent as ocr_lang if DoclingOCRPipeline == "standard"
 
 	// OCR output options
 	EnableHOCR     bool   // Whether to generate hOCR data if supported by the provider
@@ -123,6 +124,7 @@ func NewProvider(config Config) (Provider, error) {
 
 		config.DoclingOCRPipeline = strings.TrimSpace(config.DoclingOCRPipeline)
 		config.DoclingOCREngine = strings.TrimSpace(config.DoclingOCREngine)
+		config.DoclingOCRLang = strings.TrimSpace(config.DoclingOCRLang)
 		if config.DoclingOCRPipeline == "" {
 			config.DoclingOCRPipeline = "vlm"
 		}

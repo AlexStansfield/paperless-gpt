@@ -89,6 +89,7 @@ var (
 	doclingImageExportMode        = os.Getenv("DOCLING_IMAGE_EXPORT_MODE")
 	doclingOCRPipeline            = os.Getenv("DOCLING_OCR_PIPELINE")
 	doclingOCREngine              = os.Getenv("DOCLING_OCR_ENGINE")
+	doclingOCRLang                = os.Getenv("DOCLING_OCR_LANG")
 	googleThinkingBudget          *int32 // Will be parsed from GOOGLEAI_THINKING_BUDGET
 
 	// Templates
@@ -364,6 +365,7 @@ func main() {
 		DoclingImageExportMode:   doclingImageExportMode,
 		DoclingOCRPipeline:       doclingOCRPipeline,
 		DoclingOCREngine:         doclingOCREngine,
+		DoclingOCRLang:           doclingOCRLang,
 		EnableHOCR:               true, // Always generate hOCR struct if provider supports it
 		VisionLLMMaxTokens:       visionLlmMaxTokens,
 		VisionLLMTemperature:     visionLlmTemperature,
@@ -812,6 +814,9 @@ func validateOrDefaultEnvVars() {
 		if doclingOCRPipeline == "standard" && doclingOCREngine == "" {
 			doclingOCREngine = "easyocr"
 			log.Infof("DOCLING_OCR_ENGINE not set, defaulting to %s", doclingOCREngine)
+		}
+		if doclingOCRLang != "" && doclingOCRPipeline != "standard" {
+			log.Warnf("DOCLING_OCR_LANG is set but DOCLING_OCR_PIPELINE is %q; it only applies to the standard pipeline and will be ignored", doclingOCRPipeline)
 		}
 	}
 
